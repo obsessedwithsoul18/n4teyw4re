@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64"><Configuration>Debug</Configuration><Platform>x64</Platform></ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64"><Configuration>Release</Configuration><Platform>x64</Platform></ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals"><ProjectGuid>{66D603CB-FF79-4D42-885B-8C8783CBA6F1}</ProjectGuid><Keyword>MakeFileProj</Keyword><ProjectName>N4TEYW4RE.App</ProjectName></PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration"><ConfigurationType>Makefile</ConfigurationType><PlatformToolset>v143</PlatformToolset></PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration"><ConfigurationType>Makefile</ConfigurationType><PlatformToolset>v143</PlatformToolset></PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeBuildCommandLine>cmd /c "$(ProjectDir)build-debug.cmd"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cmd /c "if exist &quot;$(ProjectDir)build\debug&quot; rmdir /s /q &quot;$(ProjectDir)build\debug&quot; &amp;&amp; &quot;$(ProjectDir)build-debug.cmd&quot;"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cmd /c "if exist &quot;$(ProjectDir)build\debug&quot; rmdir /s /q &quot;$(ProjectDir)build\debug&quot;"</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)build\debug\bin\n4teyw4re.exe</NMakeOutput>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeBuildCommandLine>cmd /c "$(ProjectDir)build-release.cmd"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cmd /c "if exist &quot;$(ProjectDir)build\release&quot; rmdir /s /q &quot;$(ProjectDir)build\release&quot; &amp;&amp; &quot;$(ProjectDir)build-release.cmd&quot;"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cmd /c "if exist &quot;$(ProjectDir)build\release&quot; rmdir /s /q &quot;$(ProjectDir)build\release&quot;"</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)build\release\bin\n4teyw4re.exe</NMakeOutput>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

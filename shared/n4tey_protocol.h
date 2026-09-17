@@ -1,0 +1,59 @@
+#pragma once
+
+#ifdef _KERNEL_MODE
+#include <ntddk.h>
+#else
+#include <Windows.h>
+#include <winioctl.h>
+#include <stdint.h>
+#endif
+
+#define N4TEY_PROTOCOL_VERSION 2u
+#define N4TEY_DRIVER_VERSION   2u
+#define N4TEY_MESSAGE_CAPACITY 512u
+
+#define IOCTL_N4TEY_PING        CTL_CODE(FILE_DEVICE_UNKNOWN, 0x800, METHOD_BUFFERED, FILE_READ_DATA | FILE_WRITE_DATA)
+#define IOCTL_N4TEY_GET_STATUS  CTL_CODE(FILE_DEVICE_UNKNOWN, 0x801, METHOD_BUFFERED, FILE_READ_DATA)
+#define IOCTL_N4TEY_ECHO        CTL_CODE(FILE_DEVICE_UNKNOWN, 0x802, METHOD_BUFFERED, FILE_READ_DATA | FILE_WRITE_DATA)
+#define IOCTL_N4TEY_SET_MESSAGE CTL_CODE(FILE_DEVICE_UNKNOWN, 0x803, METHOD_BUFFERED, FILE_WRITE_DATA)
+#define IOCTL_N4TEY_GET_MESSAGE CTL_CODE(FILE_DEVICE_UNKNOWN, 0x804, METHOD_BUFFERED, FILE_READ_DATA)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct _N4TEY_PING_REQUEST {
+    ULONG Protocol;
+    ULONG Reserved;
+} N4TEY_PING_REQUEST;
+
+typedef struct _N4TEY_PING_RESPONSE {
+    ULONG Protocol;
+    ULONG DriverVersion;
+    ULONGLONG Nonce;
+} N4TEY_PING_RESPONSE;
+
+typedef struct _N4TEY_STATUS_RESPONSE {
+    ULONG Protocol;
+    ULONG DriverVersion;
+    ULONGLONG Uptime100ns;
+    ULONGLONG RequestCount;
+    ULONG OpenHandles;
+    ULONG MessageLength;
+} N4TEY_STATUS_RESPONSE;
+
+typedef struct _N4TEY_ECHO_PACKET {
+    ULONG Protocol;
+    ULONG Length;
+    UCHAR Data[N4TEY_MESSAGE_CAPACITY];
+} N4TEY_ECHO_PACKET;
+
+typedef struct _N4TEY_MESSAGE_PACKET {
+    ULONG Protocol;
+    ULONG Length;
+    UCHAR Data[N4TEY_MESSAGE_CAPACITY];
+} N4TEY_MESSAGE_PACKET;
+
+#ifdef __cplusplus
+}
+#endif
