@@ -4,17 +4,10 @@
  * Extracts kdmapper and both driver .sys files from embedded PE resources,
  * writes them to %TEMP%, and runs kdmapper against the chosen driver.
  *
- * AV evasion strategy:
- *   - kdmapper bytes are XOR-obfuscated in the resource section so the
- *     embedded blob never matches the known kdmapper PE signature.
- *   - At runtime the bytes are decrypted in memory, written to a temp path
- *     with a non-.exe extension (.tmp), and run via CreateProcess.
- *   - The .sys driver is written as-is (drivers are not flagged by name).
- *   - Both temp files are deleted immediately after use.
- *   - Zone.Identifier ADS is stripped from the written files.
- *
- * The XOR key used when embedding is stored in resource_ids.h and must
- * match what CMake uses when building resources.rc.in.
+ * kdmapper is written with a .tmp extension rather than .exe so that
+ * Windows Defender's real-time file scanner is less likely to flag it.
+ * The Zone.Identifier ADS is stripped so SmartScreen doesn't prompt.
+ * Both temp files are deleted immediately after use.
  */
 
 #include <stdafx.hpp>
@@ -47,21 +40,6 @@ static bool load_resource( WORD id, std::vector<std::uint8_t>& out )
     return true;
 }
 
-// XOR-decrypt a buffer in place using a simple rolling 4-byte key.
-// The same key must be used when XOR-encrypting the resource at build time.
-// Key bytes are derived from IDR_XOR_KEY defined in resource_ids.h.
-static void xor_decrypt( std::vector<std::uint8_t>& buf )
-{
-    const std::uint8_t key[4] = {
-        static_cast<std::uint8_t>(  IDR_XOR_KEY        & 0xFF ),
-        static_cast<std::uint8_t>( (IDR_XOR_KEY >>  8) & 0xFF ),
-        static_cast<std::uint8_t>( (IDR_XOR_KEY >> 16) & 0xFF ),
-        static_cast<std::uint8_t>( (IDR_XOR_KEY >> 24) & 0xFF ),
-    };
-    for ( std::size_t i = 0; i < buf.size(); ++i )
-        buf[i] ^= key[i & 3];
-}
-
 // ---------------------------------------------------------------------------
 //  Temp file helpers
 // ---------------------------------------------------------------------------
@@ -89,7 +67,7 @@ static bool write_file( const std::wstring& path,
                                   &written, nullptr );
     ::CloseHandle( h );
     if ( !ok || written != static_cast<DWORD>( data.size() ) ) return false;
-    // Strip the Zone.Identifier ADS — no SmartScreen prompt for temp files
+    // Strip Zone.Identifier ADS so SmartScreen doesn't block execution
     ::DeleteFileW( ( path + L":Zone.Identifier" ).c_str() );
     return true;
 }
@@ -99,7 +77,7 @@ static void delete_silent( const std::wstring& path )
     ::DeleteFileW( path.c_str() );
 }
 
-// Run a process synchronously, hidden. Returns its exit code via |ec|.
+// Runs a process synchronously and hidden, returns its exit code via |ec|.
 static bool run_wait( const std::wstring& exe,
                        const std::wstring& args,
                        DWORD&              ec )
@@ -154,23 +132,19 @@ bool relaunch_self( const std::wstring& extra_args )
 
 std::string map_driver( bool km_mode )
 {
-    // 1. Load resources (kdmapper is XOR-encrypted in the resource section)
+    // 1. Load resources
     std::vector<std::uint8_t> kdmapper_data, driver_data;
 
     if ( !load_resource( IDR_KDMAPPER, kdmapper_data ) || kdmapper_data.empty() )
         return "Failed to load embedded kdmapper resource.";
 
-    // Decrypt kdmapper in memory — the on-disk resource bytes are XOR'd
-    // so they don't match Defender's static PE signature for kdmapper.
-    xor_decrypt( kdmapper_data );
-
     const WORD drv_id = km_mode ? IDR_DRIVER_KM : IDR_DRIVER_UM;
     if ( !load_resource( drv_id, driver_data ) || driver_data.empty() )
         return "Failed to load embedded driver resource.";
 
-    // 2. Write both to temp files
-    //    - kdmapper uses a .tmp extension (non-.exe avoids SmartScreen heuristic)
-    //    - driver uses .sys (drivers are not flagged by extension)
+    // 2. Write to temp files
+    //    .tmp extension for kdmapper — avoids Defender's .exe heuristic scan
+    //    .sys extension for the driver — kernel drivers are not flagged by name
     const std::wstring kdm_tmp = make_temp_path( L"_n4t.tmp", 1 );
     const std::wstring drv_tmp = make_temp_path( L"_drv.sys", 2 );
 
@@ -188,7 +162,7 @@ std::string map_driver( bool km_mode )
     const std::wstring args = L"\"" + drv_tmp + L"\"";
     const bool ran = run_wait( kdm_tmp, args, ec );
 
-    // 4. Clean up both temp files immediately
+    // 4. Delete both temp files immediately
     delete_silent( kdm_tmp );
     delete_silent( drv_tmp );
 
